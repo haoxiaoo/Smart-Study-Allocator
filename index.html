@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧讀書時間分配系統</title>
+    <title>Smart Study Allocator</title>
+    
     <style>
-        /* CSS 樣式 (保持簡單清晰) */
+        /* CSS 樣式 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -33,11 +34,11 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         th, td {
-            padding: 12px;
+            padding: 10px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
@@ -54,39 +55,56 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-        
-        /* 新增科目按鈕 */
-        .add-row-btn {
-            background-color: #2ecc71;
-            color: white;
-            padding: 10px;
-            width: 100%;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: background-color 0.3s;
-        }
-        .add-row-btn:hover {
-            background-color: #27ae60;
-        }
 
-        /* 計算按鈕 */
-        .calculate-btn {
-            display: block;
-            width: 100%;
+        /* 按鈕群組排版 */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        /* 新增/計算按鈕 */
+        .action-btn {
             padding: 15px;
-            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 5px;
             font-size: 1.1em;
             cursor: pointer;
             transition: background-color 0.3s;
+            flex: 1; /* 讓它們平分空間 */
+        }
+        
+        .add-row-btn {
+            background-color: #2ecc71;
+        }
+        .add-row-btn:hover {
+            background-color: #27ae60;
         }
 
+        .calculate-btn {
+            background-color: #3498db;
+        }
         .calculate-btn:hover {
             background-color: #2980b9;
+        }
+
+        /* 清除按鈕 */
+        .clear-btn {
+            background-color: #f39c12;
+        }
+        .clear-btn:hover {
+            background-color: #e67e22;
+        }
+
+        /* 刪除單科按鈕 (表格內) */
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
         }
 
         #result {
@@ -95,13 +113,13 @@
             border: 1px dashed #3498db;
             border-radius: 8px;
             background-color: #eaf6ff;
+            min-height: 50px;
         }
 
         .highlight {
             font-weight: bold;
             color: #e74c3c;
         }
-        /* 樣式結束 */
     </style>
 </head>
 <body>
@@ -114,41 +132,21 @@
         <thead>
             <tr>
                 <th>科目名稱</th>
-                <th>學分權重 (1-4)</th>
+                <th>學分 (1-4)</th>
                 <th>剩餘天數</th>
                 <th>課程類型</th>
+                <th>操作</th>
             </tr>
         </thead>
         <tbody id="subjectInput">
-            <tr>
-                <td><input type="text" value="高等微積分" data-key="name"></td>
-                <td><input type="number" value="3" min="1" max="4" data-key="credits"></td>
-                <td><input type="number" value="10" min="1" data-key="days_left"></td>
-                <td>
-                    <select data-key="type">
-                        <option value="3">必修</option>
-                        <option value="2">選修</option>
-                        <option value="1">通識</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td><input type="text" value="計算機概論" data-key="name"></td>
-                <td><input type="number" value="2" min="1" max="4" data-key="credits"></td>
-                <td><input type="number" value="5" min="1" data-key="days_left"></td>
-                <td>
-                    <select data-key="type">
-                        <option value="3">必修</option>
-                        <option value="2" selected>選修</option>
-                        <option value="1">通識</option>
-                    </select>
-                </td>
-            </tr>
-        </tbody>
+            </tbody>
     </table>
 
-    <button class="add-row-btn" onclick="addNewSubject()">+ 新增科目</button>
-    <button class="calculate-btn" onclick="calculateStudyTime()">計算建議讀書時間</button>
+    <div class="button-group">
+        <button class="action-btn add-row-btn" onclick="addNewSubject()">+ 新增科目</button>
+        <button class="action-btn calculate-btn" onclick="calculateStudyTime()">計算建議讀書時間</button>
+        <button class="action-btn clear-btn" onclick="clearAllSubjects()">清除所有科目</button>
+    </div>
 
     <div id="result">
         <h2>📊 計算結果與建議</h2>
@@ -157,37 +155,76 @@
 </div>
 
 <script>
-    /* JavaScript 邏輯開始 */
+    // 程式碼開始：在 DOMContentLoaded 確保 HTML 元素載入後再執行 JavaScript
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // 載入時先產生兩個範例科目
+        generateDefaultSubjects();
+    });
     
-    // 增加科目輸入行
-    function addNewSubject() {
+    // 範例科目資料
+    const defaultSubjects = [
+        { name: "高等微積分", credits: 3, days_left: 10, type_weight: 3 },
+        { name: "計算機概論", credits: 2, days_left: 5, type_weight: 2 }
+    ];
+
+    // 產生預設科目輸入行
+    function generateDefaultSubjects() {
+        defaultSubjects.forEach(subject => {
+            addNewSubject(subject.name, subject.credits, subject.days_left, subject.type_weight);
+        });
+    }
+
+    // 產生新的輸入行
+    function addNewSubject(name = '', credits = 3, days_left = 7, type_weight = 3) {
         const subjectInput = document.getElementById('subjectInput');
         const newRow = document.createElement('tr');
         
-        // 這是新的輸入行模板
+        // 根據 type_weight 設置選單的 selected 狀態
+        const selected3 = type_weight === 3 ? 'selected' : '';
+        const selected2 = type_weight === 2 ? 'selected' : '';
+        const selected1 = type_weight === 1 ? 'selected' : '';
+
         newRow.innerHTML = `
-            <td><input type="text" placeholder="科目名稱" data-key="name"></td>
-            <td><input type="number" value="3" min="1" max="4" data-key="credits"></td>
-            <td><input type="number" value="7" min="1" data-key="days_left"></td>
+            <td><input type="text" value="${name}" placeholder="科目名稱" data-key="name"></td>
+            <td><input type="number" value="${credits}" min="1" max="4" data-key="credits"></td>
+            <td><input type="number" value="${days_left}" min="1" data-key="days_left"></td>
             <td>
                 <select data-key="type">
-                    <option value="3">必修</option>
-                    <option value="2">選修</option>
-                    <option value="1">通識</option>
+                    <option value="3" ${selected3}>必修</option>
+                    <option value="2" ${selected2}>選修</option>
+                    <option value="1" ${selected1}>通識</option>
                 </select>
+            </td>
+            <td>
+                <button class="delete-btn" onclick="deleteSubject(this)">刪除</button>
             </td>
         `;
         subjectInput.appendChild(newRow);
     }
 
-    // 核心計算函數
+    // 刪除單一科目行
+    function deleteSubject(buttonElement) {
+        const row = buttonElement.closest('tr'); // 找到最近的 tr (行) 元素
+        row.remove();
+        // 刪除後自動重新計算結果
+        calculateStudyTime();
+    }
+
+    // 清除所有科目
+    function clearAllSubjects() {
+        const subjectInput = document.getElementById('subjectInput');
+        subjectInput.innerHTML = ''; // 清空所有行
+        document.getElementById('result').innerHTML = '<h2>📊 計算結果與建議</h2><p>已清除所有科目。</p>';
+    }
+
+    // 核心計算函數 (您的 Python 邏輯)
     function calculateStudyTime() {
         const subjectInput = document.getElementById('subjectInput');
         let subjects = [];
         let totalScore = 0;
         let validSubjectCount = 0;
 
-        // 1. 讀取並計算資料
+        // 1. 讀取並計算資料 (使用 forEach 模擬 Python 迴圈)
         const rows = subjectInput.querySelectorAll('tr');
 
         rows.forEach(row => {
@@ -198,7 +235,8 @@
 
             if (name && credits > 0) { 
                 validSubjectCount++;
-                // 核心加權公式：
+                
+                // 核心加權公式實現 (score = (credits * 0.5) + (1/days_left * 0.3) + (type_weight * 0.2))
                 const score = (credits * 0.5) + (1 / days_left * 0.3) + (type_weight * 0.2);
 
                 subjects.push({
@@ -211,7 +249,7 @@
 
         // 檢查是否有足夠的資料
         if (validSubjectCount === 0 || totalScore === 0) {
-            document.getElementById('result').innerHTML = '<h2>📊 計算結果與建議</h2><p class="highlight">請至少填寫一個有效的科目名稱與學分數！</p>';
+            document.getElementById('result').innerHTML = '<h2>📊 計算結果與建議</h2><p class="highlight">請至少新增一個有效的科目名稱與學分數！</p>';
             return;
         }
 
@@ -221,6 +259,7 @@
         // 3. 輸出結果與百分比換算
         let resultHtml = `
             <h2>✅ 建議讀書時間分配</h2>
+            <p>重要性分數總和: ${totalScore.toFixed(2)}</p>
             <table>
                 <thead>
                     <tr>
@@ -232,3 +271,33 @@
                 </thead>
                 <tbody>
         `;
+
+        subjects.forEach((subject, index) => {
+            // 百分比換算 (percentage conversion)
+            const percentage = (subject.score / totalScore) * 100;
+            const priorityClass = index === 0 ? 'highlight' : '';
+
+            resultHtml += `
+                <tr class="${priorityClass}">
+                    <td>${index + 1}</td>
+                    <td><strong>${subject.name}</strong></td>
+                    <td>${subject.score.toFixed(2)}</td>
+                    <td>${percentage.toFixed(1)}%</td>
+                </tr>
+            `;
+        });
+
+        resultHtml += '</tbody></table>';
+        
+        resultHtml += `
+            <h3>📖 程式碼說明</h3>
+            <p><strong>核心公式:</strong> Score = (學分 $\\times 0.5$) + (1 / 天數 $\\times 0.3$) + (類型 $\\times 0.2$)</p>
+            <p>本系統使用 JavaScript 模擬 Python 的 **迴圈 (forEach)** 讀取資料、執行 **公式計算**，並利用數組的 **排序 (sort)** 函數決定優先級，實現了您提出的核心邏輯。</p>
+        `;
+
+        document.getElementById('result').innerHTML = resultHtml;
+    }
+</script>
+
+</body>
+</html>
