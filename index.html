@@ -125,7 +125,7 @@
 <body>
 
 <div class="container">
-    <h1>📚 智慧讀書時間分配系統</h1>
+    <h1>Smart Study Allocator</h1>
     <p>請輸入每門科目的資訊，系統將為您計算出建議的讀書時間百分比。</p>
 
     <table>
@@ -149,7 +149,7 @@
     </div>
 
     <div id="result">
-        <h2>📊 計算結果與建議</h2>
+        <h2>計算結果與建議</h2>
         <p>點擊上方按鈕，即可顯示各科目的優先順序和建議時間分配。</p>
     </div>
 </div>
@@ -258,7 +258,7 @@
 
         // 3. 輸出結果與百分比換算
         let resultHtml = `
-            <h2>✅ 建議讀書時間分配</h2>
+            <h2>建議讀書時間分配</h2>
             <p>重要性分數總和: ${totalScore.toFixed(2)}</p>
             <table>
                 <thead>
@@ -290,7 +290,7 @@
         resultHtml += '</tbody></table>';
         
         resultHtml += `
-            <h3>📖 程式碼說明</h3>
+            <h3>程式碼說明</h3>
             <p><strong>核心公式:</strong> Score = (學分 $\\times 0.5$) + (1 / 天數 $\\times 0.3$) + (類型 $\\times 0.2$)</p>
             <p>本系統使用 JavaScript 模擬 Python 的 **迴圈 (forEach)** 讀取資料、執行 **公式計算**，並利用數組的 **排序 (sort)** 函數決定優先級，實現了您提出的核心邏輯。</p>
         `;
